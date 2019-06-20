@@ -1,0 +1,6 @@
+[
+  {
+    "ParameterKey": "IngestionInstanceRoleArn",
+    "ParameterValue": "arn:aws:iam::943289235861:role/ecs-ingest-ECSRole-ap-southeast-2" 
+  }
+]

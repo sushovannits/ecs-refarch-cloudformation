@@ -1,17 +1,10 @@
-# Start from a small base
-FROM scratch
-
-# Our application requires no privileges
-# so run it with a non-root user
-ADD users /etc/passwd
-USER nobody
-
-# Our application runs on port 8001
-# so allow hosts to bind to that port
+FROM golang:latest 
+RUN mkdir /app 
+ADD . /app/ 
+WORKDIR /app 
 EXPOSE 8001
-
-# Add our application binary
-ADD app /app
-
-# Run our application!
-ENTRYPOINT [ "/app" ]
+RUN go get -d -v ./...
+RUN go build -o main . 
+# HEALTHCHECK --interval=30s --timeout=30s CMD curl -f http://localhost:8001/products || exit 1
+HEALTHCHECK --interval=10s --timeout=5s CMD echo "pass" || exit 1
+CMD ["/app/main"]

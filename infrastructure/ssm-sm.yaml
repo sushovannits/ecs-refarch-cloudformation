@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: All key resources to be used. For now session manager
+Parameters:
+  ECSInstanceRoleArn:
+    Description: The role arn if instance 
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: ^arn:aws:iam::[-:/a-zA-Z0-9]*$
+Resources: 
+#============================================================
+# KMS key to be used by ssm session agent with session manager
+#============================================================
+  SsmSessionKey:
+    Type: AWS::KMS::Key
+    Properties: 
+      Description: Keys used by ssm agent in ec2 instance to transfer session data to session manager
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy: 
+          Version: '2012-10-17'
+          Id: key-consolepolicy-2
+          Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Join
+                - ''
+                - - 'arn:aws:iam::'
+                  - !Ref 'AWS::AccountId'
+                  - :root 
+            Action: kms:*
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS: !Ref ECSInstanceRoleArn 
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS: !Ref ECSInstanceRoleArn
+            Action:
+              - kms:CreateGrant
+              - kms:ListGrants
+              - kms:RevokeGrant
+            Resource: "*"
+            Condition:
+              Bool:
+                kms:GrantIsForAWSResource: 'true'
+      KeyUsage: ENCRYPT_DECRYPT
+      PendingWindowInDays: 7
+  SSMKeyAlias:
+      Type: AWS::KMS::Alias
+      DeletionPolicy: Delete
+      Properties:
+        AliasName: alias/ingestion-ecs-ssm-session-key-1
+        TargetKeyId: !Ref SsmSessionKey
+#============================================================
+# S3 Bucket
+#============================================================
+  SsmAuditLogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ssm-output-history-ingestion-infra-${AWS::Region}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+    DeletionPolicy: Delete
+
+  SsmOutputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SsmAuditLogBucket
+      PolicyDocument:
+        Statement:
+          - 
+            Sid: Allow writes from the SSM service
+            Effect: Allow
+            Principal:
+                Service: ec2.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub arn:aws:s3:::${SsmAuditLogBucket}/*
+          -
+            Sid: Enforce HTTPS Connections
+            Action: s3:*
+            Effect: Deny
+            Principal: '*'
+            Resource: !Sub arn:aws:s3:::${SsmAuditLogBucket}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+          -
+            Sid: Restrict Delete* Actions
+            Action: s3:Delete*
+            Effect: Deny
+            Principal: '*'
+            Resource: !Sub arn:aws:s3:::${SsmAuditLogBucket}/*
+
+Outputs:
+  SsmSessionKey:
+    Description: KMS key used by ssm agent and needs to be configured in Session Manager preference
+    Value: !Ref SsmSessionKey

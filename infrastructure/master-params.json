@@ -1,0 +1,31 @@
+[
+  {
+    "ParameterKey": "TemplatePath",
+    "ParameterValue": "https://s3.amazonaws.com/aristotle-ingestion-templates"
+  },
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "ecs-ingest"  
+  },
+  {
+    "ParameterKey": "VPC",
+    "ParameterValue": "vpc-0afff041c7aa84361"
+  },
+  {
+    "ParameterKey": "PublicSubnets",
+    "ParameterValue": "subnet-098bb2756c4126677,subnet-0bccaaf15919cec36"
+  },
+  {
+    "ParameterKey": "PrivateSubnets",
+    "ParameterValue": "subnet-0c6d092c3c7dbbbad,subnet-0b4b90d56d249cb33"
+  },
+  {
+    "ParameterKey": "ECSAMI",
+    "ParameterValue": "ami-09beedd47899d6734"
+  },
+  {
+    "ParameterKey": "ImageUrl",
+    "ParameterValue": "943289235861.dkr.ecr.ap-southeast-2.amazonaws.com/bacchus/ambrosia:63"
+  }
+]
+

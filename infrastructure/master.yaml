@@ -1,0 +1,129 @@
+Description: Master stack which creates all required nested stacks
+
+Parameters:
+  TemplatePath:
+    Type: String
+    Description: S3Bucket Path where the templates are stored
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: Choose which VPC the security groups should be deployed to
+  PublicSubnets:
+    Description: Choose which subnets the Application Load Balancer should be deployed to
+    Type: List<AWS::EC2::Subnet::Id>
+  PrivateSubnets:
+    Description: Choose which subnets this ECS cluster should be deployed to
+    Type: List<AWS::EC2::Subnet::Id>
+  InstanceType:
+    Description: Which instance type should we use to build the ECS cluster?
+    Type: String
+    Default: c4.large
+  ClusterSize:
+    Description: How many ECS hosts do you want to initially deploy?
+    Type: Number
+    Default: 2
+  ECSAMI:
+    Description: ECS-Optimized AMI ID
+    Type: String
+    # Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    # Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
+  DesiredCount:
+    Description: The number of instances required of ingestion service
+    Type: Number
+    Default: 1
+
+
+
+Resources:
+  SecurityGroupStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${TemplatePath}/security-groups.yaml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VPC: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: SecurityGroupStack
+
+  LoadBalancersStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${TemplatePath}/load-balancers.yaml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VPC: !Ref VPC
+        Subnets: !Join 
+          - ","
+          - !Ref PublicSubnets 
+      Tags:
+        - Key: Name
+          Value:   oadBalancersStack
+
+  EcsClusterStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${TemplatePath}/ecs-cluster.yaml"
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        InstanceType: !Ref InstanceType
+        ClusterSize: !Ref ClusterSize
+        VPC: !Ref VPC
+        Subnets: !Join 
+          - ","
+          - !Ref PrivateSubnets 
+        SecurityGroup: !GetAtt SecurityGroupStack.Outputs.ECSHostSecurityGroup
+        ECSAMI: !Ref ECSAMI
+      Tags:
+        - Key: Name
+          Value: EcsClusterStack
+
+  LifeCycleHookStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${TemplatePath}/lifecyclehook.yaml"
+      Parameters:
+        Cluster: !GetAtt EcsClusterStack.Outputs.Cluster
+        ECSAutoScalingGroupName: !GetAtt EcsClusterStack.Outputs.ECSAutoScalingGroupName
+      Tags:
+        - Key: Name
+          Value: LifeCycleHookStack
+
+
+  IngestionServiceStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${TemplatePath}/ingestion-service.yaml"
+      Parameters:
+        Cluster: !GetAtt EcsClusterStack.Outputs.Cluster
+        DesiredCount: !Ref DesiredCount
+        # 4061TargetGroupArn: !GetAtt LoadBalancersStack.Outputs.Net4061TargetGroupArn
+        # 4064TargetGroupArn: !GetAtt LoadBalancersStack.Outputs.Net4064TargetGroupArn
+        80TargetGroupArn: !GetAtt LoadBalancersStack.Outputs.Net80TargetGroupArn
+      Tags:
+        - Key: Name
+          Value: IngestionServiceStack
+
+  SessionManagerResourceStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "${TemplatePath}/ssm-sm.yaml"
+      Parameters:
+        ECSInstanceRoleArn: !GetAtt EcsClusterStack.Outputs.ECSInstanceRoleArn
+
+Outputs:
+  LoadBalancerUrl:
+    Description: URL endpoint of ingestion load balancer
+    Value: !GetAtt LoadBalancersStack.Outputs.NetLoadBalancerUrl
+  # ECSInstanceRoleArn:
+  #   Description: Arn to add to SSM key policy
+  #   Value: !GetAtt EcsClusterStack.Outputs.ECSInstanceRoleArn
+  ArtefactTransferBucket:
+    Description: The bucket used to transfer things into the instances
+    Value: !GetAtt EcsClusterStack.Outputs.ArtefactTransferBucket
+  SsmSessionKey:
+    Description: KMS key used by ssm agent and needs to be configured in Session Manager preference
+    Value: !GetAtt SessionManagerResourceStack.Outputs.SsmSessionKey
+  

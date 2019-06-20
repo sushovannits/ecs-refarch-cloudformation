@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "ecs-spike-test"  
+  },
+  {
+    "ParameterKey": "VPC",
+    "ParameterValue": "vpc-0afff041c7aa84361"  
+  },
+  {
+    "ParameterKey": "Subnets",
+    "ParameterValue": "subnet-0c6d092c3c7dbbbad,subnet-0c6d092c3c7dbbbad"
+  },
+  {
+    "ParameterKey": "SecurityGroup",
+    "ParameterValue": "sg-0cc6642bc31867102"  
+  }
+]

@@ -15,52 +15,154 @@ Parameters:
     Description: Choose which subnets the Application Load Balancer should be deployed to
     Type: List<AWS::EC2::Subnet::Id>
 
-  SecurityGroup:
-    Description: Select the Security Group to apply to the Application Load Balancer
-    Type: AWS::EC2::SecurityGroup::Id
+  # SecurityGroup:
+  #   Description: Select the Security Group to apply to the Application Load Balancer
+  #   Type: AWS::EC2::SecurityGroup::Id
 
 Resources:
-  LoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Name: !Ref EnvironmentName
-      Subnets: !Ref Subnets
-      SecurityGroups:
-        - !Ref SecurityGroup
-      Tags:
-        - Key: Name
-          Value: !Ref EnvironmentName
+  ## Below is the application load balancer if we ever need it
+  # LoadBalancer:
+  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  #   Properties:
+  #     Name: !Sub ${EnvironmentName}
+  #     Type: application
+  #     Subnets: !Ref Subnets
+  #     SecurityGroups:
+  #       - !Ref SecurityGroup
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Ref EnvironmentName
 
-  LoadBalancerListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref DefaultTargetGroup
+  # LoadBalancerListener:
+  #   Type: AWS::ElasticLoadBalancingV2::Listener
+  #   Properties:
+  #     LoadBalancerArn: !Ref LoadBalancer
+  #     Port: 80
+  #     Protocol: HTTP
+  #     DefaultActions:
+  #       - Type: forward
+  #         TargetGroupArn: !Ref DefaultTargetGroup
 
-  # We define a default target group here, as this is a mandatory Parameters
-  # when creating an Application Load Balancer Listener. This is not used, instead
-  # a target group is created per-service in each service template (../services/*)
-  DefaultTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: !Sub ${EnvironmentName}-default
-      VpcId: !Ref VPC
-      Port: 80
-      Protocol: HTTP
+  # # We define a default target group here, as this is a mandatory Parameters
+  # # when creating an Application Load Balancer Listener. This is not used, instead
+  # # a target group is created per-service in each service template (../services/*)
+  # DefaultTargetGroup:
+  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #   Properties:
+  #     Name: !Sub ${EnvironmentName}-default
+  #     VpcId: !Ref VPC
+  #     Port: 80
+  #     Protocol: HTTP
 
+  # The network load balancer that will be used
+  NetLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+          Name: !Sub net-${EnvironmentName}-lb
+          Type: network
+          Scheme: internet-facing
+          Subnets: !Ref Subnets
+          Tags: 
+              - Key: Name
+                Value: !Ref EnvironmentName
+
+  # Net4061TargetGroup:
+  #     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #     DependsOn: NetLoadBalancer
+  #     Properties:
+  #       Name: !Sub ${EnvironmentName}-net-4061-default
+  #       VpcId: !Ref VPC
+  #       Port: 4061
+  #       Protocol: TCP
+
+  # Net4064TargetGroup:
+  #     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #     DependsOn: NetLoadBalancer
+  #     Properties:
+  #       Name: !Sub ${EnvironmentName}-net-4064-default
+  #       VpcId: !Ref VPC
+  #       Port: 4064
+  #       Protocol: TCP
+
+  Net80TargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      DependsOn: NetLoadBalancer
+      Properties:
+        Name: !Sub ${EnvironmentName}-net-80-default
+        VpcId: !Ref VPC
+        Port: 80
+        Protocol: TCP
+
+  # Net4061LoadBalancerListener:
+  #     Type: AWS::ElasticLoadBalancingV2::Listener
+  #     Properties: 
+  #         DefaultActions:
+  #           - Type: forward
+  #             TargetGroupArn: !Ref Net4061TargetGroup
+  #         LoadBalancerArn: !Ref NetLoadBalancer
+  #         Port: 4061
+  #         Protocol: TCP
+
+  # Net4064LoadBalancerListener:
+  #     Type: AWS::ElasticLoadBalancingV2::Listener
+  #     Properties: 
+  #         DefaultActions:
+  #           - Type: forward
+  #             TargetGroupArn: !Ref Net4064TargetGroup
+  #         LoadBalancerArn: !Ref NetLoadBalancer
+  #         Port: 4064
+  #         Protocol: TCP
+
+  Net80LoadBalancerListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties: 
+          DefaultActions:
+            - Type: forward
+              TargetGroupArn: !Ref Net80TargetGroup
+          LoadBalancerArn: !Ref NetLoadBalancer
+          Port: 80
+          Protocol: TCP
 Outputs:
-  LoadBalancer:
-    Description: A reference to the Application Load Balancer
-    Value: !Ref LoadBalancer
+  # LoadBalancer:
+  #   Description: A reference to the Application Load Balancer
+  #   Value: !Ref LoadBalancer
 
-  LoadBalancerUrl:
-    Description: The URL of the ALB
-    Value: !GetAtt LoadBalancer.DNSName
+  # LoadBalancerUrl:
+  #   Description: The URL of the ALB
+  #   Value: !GetAtt LoadBalancer.DNSName
 
-  Listener:
+  # Listener:
+  #   Description: A reference to a port 80 listener
+  #   Value: !Ref LoadBalancerListener
+
+  NetLoadBalancer:
+    Description: A reference to the Network Load Balancer
+    Value: !Ref NetLoadBalancer
+
+  NetLoadBalancerUrl:
+    Description: The URL of the NLB
+    Value: !GetAtt NetLoadBalancer.DNSName
+
+  # Net4061Listener:
+  #   Description: A reference to a port 4061 listener
+  #   Value: !Ref Net4061LoadBalancerListener
+
+  # Net4064Listener:
+  #   Description: A reference to a port 4064 listener
+  #   Value: !Ref Net4064LoadBalancerListener
+
+  Net80Listener:
     Description: A reference to a port 80 listener
-    Value: !Ref LoadBalancerListener
+    Value: !Ref Net80LoadBalancerListener
+
+  # Net4061TargetGroupArn:
+  #   Description: Target group for NLB
+  #   Value: !Ref Net4061TargetGroup
+
+  # Net4064TargetGroupArn:
+  #   Description: Target group for NLB
+  #   Value: !Ref Net4064TargetGroup
+
+  Net80TargetGroupArn:
+    Description: Target group for NLB
+    Value: !Ref Net80TargetGroup

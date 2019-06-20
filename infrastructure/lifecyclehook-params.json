@@ -1,0 +1,11 @@
+[
+  {
+    "ParameterKey": "Cluster",
+    "ParameterValue": "ecs-spike-test"  
+  },
+  {
+    "ParameterKey": "ECSAutoScalingGroupName",
+    "ParameterValue": "ecs-spike-cluster-ECSAutoScalingGroup-1II8ZCZH1ZM7M"  
+  }
+]
+

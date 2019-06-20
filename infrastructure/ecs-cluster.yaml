@@ -15,7 +15,7 @@ Parameters:
   ClusterSize:
     Description: How many ECS hosts do you want to initially deploy?
     Type: Number
-    Default: 4
+    Default: 2
 
   VPC:
     Description: Choose which VPC this ECS cluster should be deployed to
@@ -31,8 +31,9 @@ Parameters:
 
   ECSAMI:
     Description: ECS-Optimized AMI ID
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
+    # Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Type: String
+    # Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
 
 Resources:
   ECSCluster:
@@ -88,6 +89,12 @@ Resources:
           /usr/bin/enable-ec2-spot-hibernation
 
     Metadata:
+      AWS::CloudFormation::Authentication:
+        S3AccessCreds: 
+          type: S3
+          roleName: !Ref ECSRole
+          buckets:
+            - !Ref ArtefactTransferBucket
       AWS::CloudFormation::Init:
         config:
           packages:
@@ -207,6 +214,12 @@ Resources:
                 - ecs:UpdateService
               Resource: "*"
 
+  ArtefactTransferBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub aristotle-ingestion-ecs-artefact-transfer-bucket-${AWS::Region}
+
   ECSCloudWatchParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -305,3 +318,11 @@ Outputs:
   ECSAutoScalingGroupName:
     Description: A reference to ECS AutoScaling Group Name
     Value: !Ref ECSAutoScalingGroup
+
+  ECSInstanceRoleArn:
+    Description: The rolearn to add to ssm keys
+    Value: !GetAtt [ ECSRole, Arn ]
+
+  ArtefactTransferBucket:
+    Description: The bucket used to transfer things into the instances
+    Value: !Ref ArtefactTransferBucket

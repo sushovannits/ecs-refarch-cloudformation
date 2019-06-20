@@ -1,0 +1,28 @@
+version: '3.7'
+
+
+services:
+    website:
+        image: bacchus-ecs-spike-test-website-service:latest 
+        hostname: website
+        ports:
+          - '8000:8000'
+        environment:
+          PRODUCT_SERVICE_URL: 'host.docker.internal:8001/products'
+        networks:
+          - ecs-spike
+        depends_on:
+          - product
+    product:
+        image: bacchus-ecs-spike-test-product-service:latest 
+        hostname: product
+        ports:
+          - '8001:8001'
+        networks:
+          - ecs-spike
+networks:
+  ecs-spike:
+    driver: bridge
+
+        
+

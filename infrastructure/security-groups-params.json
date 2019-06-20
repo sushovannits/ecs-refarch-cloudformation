@@ -1,0 +1,11 @@
+[
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "ecs-spike-test"  
+  },
+  {
+    "ParameterKey": "VPC",
+    "ParameterValue": "vpc-0afff041c7aa84361"
+  }
+]
+

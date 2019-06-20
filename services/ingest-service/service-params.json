@@ -1,0 +1,15 @@
+[
+  {
+    "ParameterKey": "Cluster",
+    "ParameterValue": "ecs-spike-test"  
+  },
+  {
+    "ParameterKey": "VPC",
+    "ParameterValue": "vpc-0afff041c7aa84361"  
+  },
+  {
+    "ParameterKey": "TargetGroupArn",
+    "ParameterValue": "arn:aws:elasticloadbalancing:ap-southeast-2:943289235861:targetgroup/ecs-spike-test-lb5-net-default/0f685c8de0055b75"
+  }
+]
+

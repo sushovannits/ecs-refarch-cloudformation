@@ -1,6 +1,7 @@
 package main
 
 import "github.com/gin-gonic/gin"
+// import "encoding/json"
 
 type product struct {
 	ID          string

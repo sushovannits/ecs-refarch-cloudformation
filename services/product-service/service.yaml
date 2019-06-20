@@ -45,7 +45,7 @@ Resources:
       ContainerDefinitions:
         - Name: product-service
           Essential: true
-          Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/ecs-refarch-cloudformation/product-service:1.0.0
+          Image: 943289235861.dkr.ecr.ap-southeast-2.amazonaws.com/bacchus-ecs-spike-test-product-service:latest 
           Memory: 128
           PortMappings:
             - ContainerPort: 8001

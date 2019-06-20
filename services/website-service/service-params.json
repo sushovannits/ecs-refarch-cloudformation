@@ -1,0 +1,24 @@
+[
+  {
+    "ParameterKey": "Cluster",
+    "ParameterValue": "ecs-spike-test"  
+  },
+  {
+    "ParameterKey": "VPC",
+    "ParameterValue": "vpc-0afff041c7aa84361"  
+  },
+  {
+    "ParameterKey": "Listener",
+    "ParameterValue": "arn:aws:elasticloadbalancing:ap-southeast-2:943289235861:listener/app/ecs-spike-test-lb/845e9d81b3898209/ec9c4e9ee74d6a73"
+  },
+  {
+    "ParameterKey": "ProductServiceUrl",
+    "ParameterValue": "ecs-spike-test-lb-407860059.ap-southeast-2.elb.amazonaws.com/products"
+  },
+  {
+    "ParameterKey": "ECSServiceAutoScalingRoleARN",
+    "ParameterValue": "arn:aws:iam::943289235861:role/ecs-spike-cluster-ECSServiceAutoScalingRole-4WQ4C67PQ120"  
+  }
+]
+
+
